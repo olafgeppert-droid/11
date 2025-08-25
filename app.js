@@ -847,18 +847,54 @@ function updateStats(){
 
 // Event-Listener für Baum-Interaktionen
 function setupTreeInteractions() {
-    // Zoom-Funktionalität
     let scale = 1;
-    const treeContainer = $("#tree");
-    
+    const treeContainer = $("#treeContainer");
+    const tree = $("#tree");
+
+    // Zoom-Funktion mit Mausrad
     treeContainer.addEventListener("wheel", (e) => {
         e.preventDefault();
         scale += e.deltaY * -0.001;
         scale = Math.min(Math.max(0.5, scale), 3);
-        treeContainer.style.transform = `scale(${scale})`;
+        tree.style.transform = `scale(${scale})`;
+        tree.style.transformOrigin = 'center center';
     });
 
-    // Pan-Funktionalität für Touch-Geräte
+    // Touch-Gesten für Zoom auf Mobilgeräten
+    let lastTouchDistance = 0;
+    treeContainer.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 2) {
+            lastTouchDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+        }
+    });
+
+    treeContainer.addEventListener("touchmove", (e) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const touchDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            
+            if (lastTouchDistance > 0) {
+                const zoomFactor = touchDistance / lastTouchDistance;
+                scale *= zoomFactor;
+                scale = Math.min(Math.max(0.5, scale), 3);
+                tree.style.transform = `scale(${scale})`;
+                tree.style.transformOrigin = 'center center';
+            }
+            lastTouchDistance = touchDistance;
+        }
+    });
+
+    treeContainer.addEventListener("touchend", () => {
+        lastTouchDistance = 0;
+    });
+
+    // Drag-Funktion
     let startX, startY, scrollLeft, scrollTop;
     let isDragging = false;
 
@@ -868,14 +904,17 @@ function setupTreeInteractions() {
         startY = e.pageY - treeContainer.offsetTop;
         scrollLeft = treeContainer.scrollLeft;
         scrollTop = treeContainer.scrollTop;
+        treeContainer.style.cursor = 'grabbing';
     });
 
-    treeContainer.addEventListener("mouseleave", () => {
+    treeContainer.addEventListener("mouseleave", () => { 
         isDragging = false;
+        treeContainer.style.cursor = 'grab';
     });
 
-    treeContainer.addEventListener("mouseup", () => {
+    treeContainer.addEventListener("mouseup", () => { 
         isDragging = false;
+        treeContainer.style.cursor = 'grab';
     });
 
     treeContainer.addEventListener("mousemove", (e) => {
@@ -888,6 +927,36 @@ function setupTreeInteractions() {
         treeContainer.scrollLeft = scrollLeft - walkX;
         treeContainer.scrollTop = scrollTop - walkY;
     });
+
+    // Touch-Drag für Mobilgeräte
+    let touchStartX, touchStartY;
+    treeContainer.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 1) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }
+    });
+
+    treeContainer.addEventListener("touchmove", (e) => {
+        if (e.touches.length === 1) {
+            e.preventDefault();
+            const touchX = e.touches[0].clientX;
+            const touchY = e.touches[0].clientY;
+            const deltaX = touchStartX - touchX;
+            const deltaY = touchStartY - touchY;
+            treeContainer.scrollLeft += deltaX;
+            treeContainer.scrollTop += deltaY;
+            touchStartX = touchX;
+            touchStartY = touchY;
+        }
+    });
+}
+
+function init() {
+    loadState();
+    setupEventListeners();
+    updateUI();
+    setTimeout(setupTreeInteractions, 1000);
 }
 
 /* Init */
