@@ -741,53 +741,62 @@ function deletePerson() {
     updateUI();
 }
 
-function importData() {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json,.csv";
-    input.addEventListener("change", function () {
-        const file = this.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            try {
-                let data;
-                if (file.name.toLowerCase().endsWith('.csv')) {
-                    data = parseCSV(e.target.result);
-                } else {
-                    data = JSON.parse(e.target.result);
-                }
-                if (!Array.isArray(data)) throw new Error("Daten müssen ein Array sein");
-                if (data.length === 0) throw new Error("Keine Daten");
-                if (!data.every(validatePerson)) throw new Error("Ungültige Daten");
-                people = data;
-                postLoadFixups();
-                saveState();
-                updateUI();
-                alert(`Erfolgreich ${data.length} Personen importiert.`);
-            } catch (error) {
-                console.error("Import-Fehler:", error);
-                $("#dlgImportError").showModal();
+function importData(file) {
+    const r = new FileReader();
+    r.onload = () => {
+        try {
+            let data;
+            if (file.name.toLowerCase().endsWith('.csv')) {
+                data = parseCSV(r.result);
+            } else {
+                data = JSON.parse(r.result);
             }
-        };
-        reader.readAsText(file);
-    });
-    input.click();
+
+            if (!Array.isArray(data)) throw new Error("Format");
+
+            const validData = [];
+            let hasErrors = false;
+
+            for (const item of data) {
+                if (item && typeof item === 'object' && item.Code && typeof item.Code === 'string') {
+                    if (!validateRequiredFields(item) || (item.Birth && !validateBirthDate(item.Birth))) {
+                        hasErrors = true;
+                        break;
+                    }
+                    validData.push(item);
+                }
+            }
+
+            if (hasErrors || validData.length === 0) {
+                $("#dlgImportError").showModal();
+                return;
+            }
+
+            people = validData;
+            postLoadFixups();
+            saveState(false);
+            updateUI();
+        } catch (e) {
+            console.error("Import error:", e);
+            $("#dlgImportError").showModal();
+        }
+    };
+    r.readAsText(file);
 }
 
 function parseCSV(csvText) {
-    const lines = csvText.split(/\r?\n/).filter(line => line.trim());
+    const lines = csvText.split('\n').filter(line => line.trim());
     if (lines.length < 2) return [];
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    const headers = lines[0].split(';').map(h => h.trim());
     const result = [];
+
     for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-        if (values.length !== headers.length) continue;
+        const values = lines[i].split(';').map(v => v.trim());
         const obj = {};
-        headers.forEach((header, index) => {
-            obj[header] = values[index] || '';
-        });
-        result.push(obj);
+        for (let j = 0; j < headers.length; j++) {
+            if (j < values.length) obj[headers[j]] = values[j] || '';
+        }
+        if (obj.Code) result.push(obj);
     }
     return result;
 }
@@ -795,78 +804,66 @@ function parseCSV(csvText) {
 function exportData(format) {
     if (format === 'json') {
         const dataStr = JSON.stringify(people, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `familien-datenbank_${new Date().toISOString().slice(0, 10)}.json`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 100);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        shareOrDownload("familie.json", blob);
     } else if (format === 'csv') {
-        const headers = ["Gen", "Code", "RingCode", "Name", "Birth", "BirthPlace", "Gender", "ParentCode", "PartnerCode", "InheritedFrom", "Note"];
-        const csvContent = [
-            headers.join(','),
-            ...people.map(p => headers.map(h => `"${(p[h] || '').toString().replace(/"/g, '""')}"`).join(','))
-        ].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `familien-datenbank_${new Date().toISOString().slice(0, 10)}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 100);
+        const cols = ["Gen", "Code", "RingCode", "Name", "Birth", "BirthPlace", "Gender", "ParentCode", "PartnerCode", "InheritedFrom", "Note"];
+        const lines = [cols.join(";")];
+        for (const p of people) { lines.push(cols.map(c => String(p[c] ?? "").replace(/;/g, ",")).join(";")); }
+        const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+        shareOrDownload("familie.csv", blob);
     }
 }
 
+async function shareOrDownload(filename, blob) {
+    const file = new File([blob], filename, { type: blob.type || "application/octet-stream" });
+    if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+        try {
+            await navigator.share({ files: [file], title: "Export" });
+            return;
+        } catch (e) { /* fallback to download */ }
+    }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+// DRUCKFUNKTIONEN - Korrektur für Windows/Mac
 function printTable() {
-    const originalStyles = document.head.innerHTML;
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Familien-Datenbank Druck</title>
-            <style>
-                body { font-family: sans-serif; margin: 20px; }
-                table { border-collapse: collapse; width: 100%; }
-                th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-                th { background-color: #f0f0f0; }
-            </style>
-        </head>
-        <body>
-            <h1>Familien-Datenbank – ${new Date().toLocaleDateString()}</h1>
-            ${$("#peopleTable").outerHTML}
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
+    $("#dlgPrint").close();
+    
+    // Setze das Druckdatum
+    document.body.setAttribute('data-print-date', new Date().toLocaleDateString('de-DE'));
+    
+    // Temporäre Klasse für den Druckmodus hinzufügen
+    document.body.classList.add('printing-mode', 'printing-table');
+    
+    // Kurze Verzögerung, um das Rendering abzuschließen
     setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-    }, 250);
+        window.print();
+        // Nach dem Druck die Klassen wieder entfernen
+        setTimeout(() => {
+            document.body.classList.remove('printing-mode', 'printing-table');
+        }, 500);
+    }, 100);
 }
 
 function printTree() {
-    html2canvas($("#treeContainer")).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('landscape', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth * ratio, imgHeight * ratio);
-        pdf.save(`stammbaum_${new Date().toISOString().slice(0, 10)}.pdf`);
-    });
+    $("#dlgPrint").close();
+    
+    // Setze das Druckdatum
+    document.body.setAttribute('data-print-date', new Date().toLocaleDateString('de-DE'));
+    
+    // Temporäre Klasse für den Druckmodus hinzufügen
+    document.body.classList.add('printing-mode', 'printing-tree');
+    
+    // Kurze Verzögerung, um das Rendering abzuschließen
+    setTimeout(() => {
+        window.print();
+        // Nach dem Druck die Klassen wieder entfernen
+        setTimeout(() => {
+            document.body.classList.remove('printing-mode', 'printing-tree');
+        }, 500);
+    }, 100);
 }
 
 function showStats() {
