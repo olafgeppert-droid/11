@@ -4,6 +4,19 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Wappenringe der Familie GEPPERT</title>
+
+  <!-- Vor den anderen Scripts einfügen -->
+<script src="version.js"></script>
+<script src="app.js"></script>
+
+<script>
+  (function(){
+    const r = document.getElementById('versionRibbon');
+    const u = document.getElementById('versionUnderTable');
+    if(r) r.textContent = 'Softwareversion ' + APP_VERSION;
+    if(u) u.textContent = 'Softwareversion ' + APP_VERSION;
+  })();
+</script>
   
   <!-- Redirect-Code zur Welcome-Seite -->
   <script>
