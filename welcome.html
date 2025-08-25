@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Willkommen - Wappenringe Familie GEPPERT</title>
+    
+    <!-- PDF.js Bibliothek einbinden -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    
+    <!-- Zentrale Version laden -->
+    <script src="version.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .welcome-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 900px;
+            width: 100%;
+            border: 3px solid #d4af37;
+        }
+
+        .family-crest {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            border: 5px solid #d4af37;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            background: white;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .family-crest img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2.2em;
+            margin-bottom: 20px;
+            font-weight: 300;
+            line-height: 1.4;
+        }
+
+        .version {
+            color: #7f8c8d;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .copyright {
+            color: #95a5a6;
+            font-size: 0.9em;
+            margin-bottom: 30px;
+        }
+
+        .continue-btn {
+            background: linear-gradient(45deg, #d4af37, #f1c40f);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+            margin: 10px;
+        }
+
+        .continue-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.6);
+        }
+
+        .continue-btn:active {
+            transform: translateY(-1px);
+        }
+
+        /* PDF Viewer Styles */
+        #pdf-viewer {
+            display: none;
+            margin-top: 30px;
+            border: 2px solid #a58555;
+            border-radius: 10px;
+            background: #fbf3e4;
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        #pdf-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .pdf-page {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            display: inline-block;
+        }
+
+        .pdf-controls {
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .pdf-controls button {
+            background: #d4af37;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .pdf-controls button:hover {
+            background: #c19b2e;
+        }
+
+        .pdf-controls button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #page-info {
+            font-weight: 600;
+            color: #5d4037;
+            min-width: 100px;
+        }
+
+        .loading {
+            color: #5d4037;
+            font-style: italic;
+        }
+
+        .error {
+            color: #d32f2f;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .welcome-container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .family-crest {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .continue-btn {
+                padding: 12px 30px;
+                font-size: 1.1em;
+            }
+            
+            #pdf-viewer {
+                max-height: 60vh;
+                padding: 15px;
+            }
+            
+            .pdf-controls {
+                gap: 10px;
+            }
+            
+            .pdf-controls button {
+                padding: 8px 16px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .family-crest {
+                width: 100px;
+                height: 100px;
+            }
+            
+            #pdf-viewer {
+                padding: 10px;
+            }
+            
+            #pdf-container {
+                padding: 10px;
+            }
+            
+            .pdf-controls {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome-container">
+        <div class="family-crest">
+            <img src="wappen.jpeg" alt="Familienwappen Geppert" onerror="this.style.display='none'">
+        </div>
+        
+        <h1>Willkommen im Datenbankprogramm für die Wappenringe der Familie GEPPERT</h1>
+        
+        <div class="version" id="versionInfo">Softwareversion wird geladen...</div>
+        <div class="copyright">Copyright by Olaf Geppert</div>
+        
+        <button class="continue-btn" onclick="showPDF()">PDF Anzeigen</button>
+        <button class="continue-btn" onclick="startApplication()" style="display:none;" id="continueBtn">Zur Datenbank</button>
+        
+        <div id="pdf-viewer">
+            <div class="pdf-controls">
+                <button onclick="prevPage()" id="prevBtn">← Vorherige</button>
+                <span id="page-info">Seite 1/1</span>
+                <button onclick="nextPage()" id="nextBtn">Nächste →</button>
+            </div>
+            <div id="pdf-container">
+                <p class="loading">Lade PDF...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PDF.js Variablen
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+
+        // PDF.js Worker konfigurieren
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        // Version anzeigen
+        document.getElementById('versionInfo').textContent = 'Softwareversion ' + APP_VERSION;
+
+        function showPDF() {
+            document.getElementById('pdf-viewer').style.display = 'block';
+            document.querySelector('.continue-btn').style.display = 'none';
+            document.getElementById('continueBtn').style.display = 'inline-block';
+            
+            // PDF laden
+            loadPDF('Blasonierung_Familienwappen_Urkunde.pdf');
+        }
+
+        function loadPDF(url) {
+            document.getElementById('pdf-container').innerHTML = '<p class="loading">Lade PDF...</p>';
+            
+            pdfjsLib.getDocument(url).promise.then(function(pdf) {
+                pdfDoc = pdf;
+                document.getElementById('page-info').textContent = `Seite 1/${pdf.numPages}`;
+                updateNavigationButtons();
+                renderPage(1);
+            }).catch(function(error) {
+                console.error('Fehler beim Laden der PDF:', error);
+                document.getElementById('pdf-container').innerHTML = 
+                    '<p class="error">PDF konnte nicht geladen werden. Bitte stellen Sie sicher, dass die Datei "Blasonierung_Familienwappen_Urkunde.pdf" im gleichen Verzeichnis liegt.</p>';
+            });
+        }
+
+        function renderPage(num) {
+            pageRendering = true;
+            document.getElementById('pdf-container').innerHTML = '<p class="loading">Lade Seite...</p>';
+            
+            pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({ scale: 1.8 });
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                canvas.className = 'pdf-page';
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+
+                const renderTask = page.render(renderContext);
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    document.getElementById('pdf-container').innerHTML = '';
+                    document.getElementById('pdf-container').appendChild(canvas);
+                    document.getElementById('page-info').textContent = `Seite ${num}/${pdfDoc.numPages}`;
+                    pageNum = num;
+                    updateNavigationButtons();
+                    
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            }).catch(function(error) {
+                console.error('Fehler beim Rendern der Seite:', error);
+                document.getElementById('pdf-container').innerHTML = 
+                    '<p class="error">Fehler beim Anzeigen der Seite.</p>';
+            });
+        }
+
+        function updateNavigationButtons() {
+            document.getElementById('prevBtn').disabled = (pageNum <= 1);
+            document.getElementById('nextBtn').disabled = (pageNum >= pdfDoc.numPages);
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        function prevPage() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+
+        function nextPage() {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+
+        function startApplication() {
+            window.location.href = 'index.html';
+        }
+
+        // Tastatur-Navigation
+        document.addEventListener('keydown', function(e) {
+            if (document.getElementById('pdf-viewer').style.display === 'block') {
+                if (e.key === 'ArrowLeft') {
+                    prevPage();
+                } else if (e.key === 'ArrowRight') {
+                    nextPage();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
