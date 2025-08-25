@@ -4,6 +4,20 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Wappenringe der Familie GEPPERT</title>
+  
+  <!-- Redirect-Code -->
+  <script>
+    // Prüfen ob wir von der Welcome-Seite kommen
+    if (!sessionStorage.getItem('welcomeShown')) {
+      sessionStorage.setItem('welcomeShown', 'true');
+      window.location.href = 'welcome.html';
+    }
+  </script>
+  <!-- Ende Redirect-Code -->
+  
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css"/>
+  <!-- ... restlicher Code ... -->
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css"/>
   <style>
