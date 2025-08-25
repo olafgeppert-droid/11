@@ -358,8 +358,6 @@ margin-bottom: 1em;
 margin-bottom: 0.5em;
 }
 
-/* ... vorhandener Code bleibt unverändert bis zu den Druck-Styles ... */
-
 /* Verbesserte Druckstyles für Windows/Mac */
 @media print {
     body.printing-mode {
